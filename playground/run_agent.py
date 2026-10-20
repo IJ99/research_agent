@@ -17,3 +17,6 @@ with open("report.md", "w", encoding="utf-8") as f:
     f.write(final_state["report_draft"])
 
 print("\n✅ Done! Report saved to report.md")
+
+print(f"Rounds used: {final_state['iteration']}")
+print(f"Approved by critic: {final_state['is_satisfactory']}")
