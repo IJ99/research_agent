@@ -116,3 +116,5 @@ Key state trick: `search_results` uses `Annotated[List[str], operator.add]`, so 
 - [ ] Phase 5: run nodes on a local model with Ollama (RTX 4050, 6GB VRAM)
 - [ ] README with a Mermaid architecture diagram + quickstart
 - [ ] Push to GitHub
+A Facebook group post is source [4]. The searcher accepts any page Tavily returns. Filtering out social media, or ranking sources by trust, is a good future improvement.
+The planner forces a “recent news” angle on everything. Look at your thermodynamics run: “2024-2026 thermodynamics second law research updates.” The laws of thermodynamics don’t have news! The planner prompt says “facts, recent news, expert analysis,” and that template doesn’t fit timeless topics. A smarter planner would choose the angles to fit the topic.
