@@ -118,3 +118,8 @@ Key state trick: `search_results` uses `Annotated[List[str], operator.add]`, so 
 - [ ] Push to GitHub
 A Facebook group post is source [4]. The searcher accepts any page Tavily returns. Filtering out social media, or ranking sources by trust, is a good future improvement.
 The planner forces a “recent news” angle on everything. Look at your thermodynamics run: “2024-2026 thermodynamics second law research updates.” The laws of thermodynamics don’t have news! The planner prompt says “facts, recent news, expert analysis,” and that template doesn’t fit timeless topics. A smarter planner would choose the angles to fit the topic.
+FastAPI endpoint, using def instead of async def so the server isn’t blocked
+Error handling tested with a fake model name → clean 502
+Groq auto-retries 429s, so a long run (192s, 19 sources) still succeeded
+The critic caught a global statistic misattributed to Africa
+To-do: reduce tokens per round, consider background jobs for long requests
