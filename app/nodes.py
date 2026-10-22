@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Literal
 from datetime import date
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -71,12 +71,23 @@ def writer_node(state: ResearchState) -> dict:
 
     numbered = "\n\n".join(f"[{i}] {r}" for i, r in enumerate(results, 1))
 
-    # If the critic complained last round, include its feedback
+    # If the critic complained last round, show the old draft + the complaints
     feedback = ""
     if state.get("critique"):
         feedback = f"""
-A fact-checker rejected your previous draft for these reasons. Fix every one:
+You are REVISING your previous draft, not starting over.
+
+YOUR PREVIOUS DRAFT:
+{state['report_draft']}
+
+A fact-checker rejected these claims from it:
 {state['critique']}
+
+When revising:
+- Keep everything that was not flagged, unchanged.
+- For each flagged claim: if the sources now clearly support it, keep it with the right citation. Otherwise DELETE it.
+- Prefer deleting over rewording. A shorter accurate report beats a longer shaky one.
+- Do NOT add any new claims that are not directly stated in the sources, including in tables.
 """
 
     prompt = f"""You are a research analyst. Write a clear, well-structured report on the topic below,
@@ -101,34 +112,45 @@ Sources:
     return {"report_draft": response.content}
 
 # The shape of the critic's verdict
-class Critique(BaseModel):
-    is_satisfactory: bool = Field(description="True only if every claim is clearly supported by the sources")
-    problems: str = Field(description="Specific problems found: unsupported claims, weak sources, gaps. Empty if none.")
-    follow_up_queries: List[str] = Field(description="Up to 2 new search queries that would fix the problems. Empty if satisfactory.")
+# One checked claim
+class ClaimCheck(BaseModel):
+    claim: str = Field(description="The factual claim, shortened to max 20 words")
+    cited: str = Field(description="Source numbers cited for it, e.g. '[3]' or 'none'")
+    verdict: Literal["supported", "unsupported", "overstated", "vendor_as_fact"]
+    reason: str = Field(description="One short sentence explaining the verdict")
+
+
+# The critic's full review
+class ClaimReview(BaseModel):
+    checks: List[ClaimCheck] = Field(description="Up to 15 of the most important factual claims, each checked")
+    follow_up_queries: List[str] = Field(default_factory=list, description="Up to 2 search queries to fix failed claims. Empty if all passed.")
+
+
+BAD_VERDICTS = {"unsupported", "overstated", "vendor_as_fact"}
 
 
 def critic_node(state: ResearchState) -> dict:
     iteration = state.get("iteration", 0) + 1
-    print(f"🧐 Critic: reviewing draft (round {iteration})...")
+    print(f"🧐 Critic: checking claims (round {iteration})...")
 
     numbered = "\n\n".join(f"[{i}] {r}" for i, r in enumerate(state["search_results"], 1))
 
-    prompt = f"""You are a strict but fair fact-checker reviewing a research report.
-Compare the report against the numbered sources. Only the source text shown counts as evidence.
+    prompt = f"""You are a meticulous fact-checker. Check the report CLAIM BY CLAIM.
 
-Mark is_satisfactory = FALSE only for problems the writer can actually fix:
-- A claim whose cited source does not say that (unsupported or overstated).
-- Vendor or marketing claims stated as neutral fact instead of attributed ("X claims...").
-- An important part of the topic that is not covered at all.
+For up to 15 of the most important factual claims in the report:
+1. Write the claim (max 20 words) and the source numbers it cites.
+2. Read ONLY that cited source's text below. It is the only evidence that counts.
+3. Give exactly one verdict:
+   - "supported": the cited source clearly says this.
+   - "unsupported": the cited source does not say this, or no source is cited, or the source name is wrong.
+   - "overstated": the source says something weaker or narrower (e.g. "emerging" vs "fastest-growing",
+     global figure presented as regional, one opinion presented as "consensus").
+   - "vendor_as_fact": a company's claim about its own product stated as neutral fact instead of attributed.
+4. Give one short reason.
 
-Mark is_satisfactory = TRUE if every claim is supported and attributed, EVEN IF the
-available evidence is limited — as long as the report openly states those limitations
-(e.g. "most figures come from vendors; independent studies are scarce").
-Do not reject a report just because better sources might exist somewhere.
-
-If not satisfactory, list the specific problems and give up to 2 search queries that would help.
-
-Topic: {state['topic']}
+Do not judge the report's style or overall quality. Only check claims against sources.
+Skip the Limitations section and any statements describing the sources themselves (e.g. "these are vendor blogs").
+If any claim fails, suggest up to 2 search queries that would find proper evidence.
 
 REPORT:
 {state['report_draft']}
@@ -136,19 +158,29 @@ REPORT:
 SOURCES:
 {numbered}"""
 
-    critic_llm = llm.with_structured_output(Critique, method="json_schema")
-    verdict = critic_llm.invoke(prompt)
+    critic_llm = llm.with_structured_output(ClaimReview, method="json_schema").with_retry(stop_after_attempt=2)
+    review = critic_llm.invoke(prompt)
 
-    if verdict.is_satisfactory:
-        print("   ✅ Approved.")
-    else:
-        print("   ❌ Not yet. Problems:")
-        print("   ", verdict.problems[:300])
-        print("   New searches:", verdict.follow_up_queries)
+    # Python makes the final decision, not the LLM
+    failed = [c for c in review.checks if c.verdict in BAD_VERDICTS]
+    passed = len(review.checks) - len(failed)
+    is_ok = len(failed) == 0
+
+    print(f"   Checked {len(review.checks)} claims: {passed} passed, {len(failed)} failed.")
+    for c in failed:
+        print(f"   ❌ [{c.verdict}] {c.claim}  →  {c.reason}")
+
+    # Turn the failures into clear instructions for the writer
+    problems = "\n".join(
+        f"- [{c.verdict}] \"{c.claim}\" (cited {c.cited}): {c.reason}" for c in failed
+    )
+
+    if is_ok:
+        print("   ✅ All claims passed.")
 
     return {
-        "is_satisfactory": verdict.is_satisfactory,
-        "critique": verdict.problems,
-        "search_queries": verdict.follow_up_queries,  # searcher will run THESE next round
+        "is_satisfactory": is_ok,
+        "critique": problems,
+        "search_queries": review.follow_up_queries,
         "iteration": iteration,
     }
