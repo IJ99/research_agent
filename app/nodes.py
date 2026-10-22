@@ -56,7 +56,7 @@ def searcher_node(state: ResearchState) -> dict:
 
         for r in response["results"]:
             if r["url"] in seen:
-                continue                      # duplicate, skip it
+                continue                     
             seen.add(r["url"])
             content = r["content"][:500]
             results.append(f"TITLE: {r['title']}\nURL: {r['url']}\nCONTENT: {content}")
