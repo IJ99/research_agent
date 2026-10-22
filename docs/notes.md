@@ -184,3 +184,120 @@ Key state trick: `search_results` uses `Annotated[List[str], operator.add]`, so 
 **Later**
 - [ ] Phase 5: Ollama on the RTX 4050 (6GB VRAM), compared against Groq using the exam
 - [ ] README with a Mermaid architecture diagram, quickstart, and the findings above
+
+---
+
+## Next project: Nigerian fact-checker
+
+### Vision
+
+> **Before you forward it, check it.** Send any suspicious message (text, picture or voice note, in English, Pidgin, Yoruba, Hausa or Igbo) and get a clear, sourced verdict back in your own language.
+
+### The problem
+
+"Please beware!!!" broadcast messages spread fast in Nigerian WhatsApp groups: fake government giveaways, health scares ("NAFDAC says this drink is poisoned"), scam warnings, "forward to 10 people". People forward them to protect their family, but many are false, outdated or scams. **It's for everyone in Nigeria**, not one age group. My mum is a good example of how common it is.
+
+### How it works
+
+```
+INPUT LAYER: "understand anything"
+  text / picture / voice note, in English / Pidgin / Yoruba / Hausa / Igbo
+        │
+        ▼
+  1. Picture → read the text in it + describe the image
+  2. Voice note → speech-to-text (Whisper, available on Groq)
+  3. Detect the language → translate the claim into English
+        │
+        ▼
+CHECKING CORE: adapted research agent, in English
+  claim extractor → planner → searcher → judge → critic
+        │
+        ▼
+OUTPUT LAYER: "reply the way they asked"
+  translate the verdict back into the user's language
+```
+
+- **Why check in English in the middle:** most trusted sources (CBN, NAFDAC, major Nigerian outlets, fact-checkers) publish in English. One checking core serves every language.
+- **Changes from the research agent:**
+  - **Claim extractor (new):** pulls the one checkable claim out of a messy message
+  - **Planner:** plans searches to confirm *or* disprove the claim
+  - **Searcher:** prefers trusted sources (government, CBN, NAFDAC, major outlets, fact-checkers) and drops social media posts
+  - **Judge (replaces writer):** a verdict plus 1–2 sentences
+  - **Critic:** the claim-by-claim critic; weak evidence pushes the verdict toward "Not confirmed"
+
+### Verdicts
+
+- **True**: reliable sources confirm it
+- **False**: reliable sources contradict it
+- **Misleading**: partly true, but exaggerated or missing context (e.g. a real photo from a different place or year)
+- **Not confirmed**: no reliable source confirms or denies it yet. Always better than guessing.
+
+### Reply design (works for everyone)
+
+- **Verdict first**, then 1–2 plain sentences, then sources. Readable in five seconds.
+- **Respectful tone**: "NAFDAC has not issued this warning", never "you fell for fake news".
+- **Forwardable**: short enough to send straight back to the group, so the correction spreads like the rumour did.
+- **Safety advice for scams**: "Don't click the link. Don't share your BVN."
+- Note that it's an AI tool and can make mistakes.
+
+### Pictures: what's realistic
+
+- ✅ **Read the writing** in screenshots, flyers and "warning" posters, then check it like a text claim
+- ✅ **Describe the image** and check what it claims to show
+- 🟡 **Find where a photo first appeared** (reverse image search): "real photo, but from Ghana in 2023, not Lagos today"
+- ❌ **Don't promise** to detect edited photos or deepfakes. Even experts struggle. Check the *claim*, not the pixels.
+
+### Build order (one at a time, each tested before the next)
+
+| Step | Feature | Difficulty | Notes |
+|---|---|---|---|
+| 1 | English text | ✅ Easiest | The core. Get it accurate and measured first. |
+| 2 | Pictures (screenshots, flyers) | 🟢 Moderate | Reading text works well; edited-photo detection does not |
+| 3 | Pidgin (text) | 🟢 Moderate | Models handle Pidgin reasonably well; test it |
+| 4 | Voice notes (English / Pidgin) | 🟡 Moderate | Whisper on Groq; accents and Pidgin may reduce accuracy |
+| 5 | Yoruba, Hausa, Igbo (text) | 🟠 Harder | Models are weaker; tone marks matter; test with native speakers, one language at a time |
+| 6 | Voice notes in Yoruba / Hausa / Igbo | 🔴 Hard | General speech-to-text is weak here; may need African-language speech models |
+| 7 | WhatsApp connection | 🟡 Moderate | WhatsApp Business API (or a service like Twilio). Test as a web page / API first. |
+| 8 | Video | 🔴 Hard | Audio → transcribe, a few frames → describe. Build last. |
+
+**Rule:** don't build everything at once. Many half-working features are worse than one reliable one. A wrong verdict in Hausa is still wrong, and harder for me to spot.
+
+### How I'll know it works (evaluation)
+
+- **Answer key from professional fact-checkers:** collect 30–50 Nigerian claims already checked by Dubawa / Africa Check, with their verdicts. Run my agent several times on each and measure how often it agrees.
+- ⚠️ **Avoid the "found the marking scheme" trap:** the searcher may find the fact-checker's own article and copy its verdict. Run the test **twice**: with fact-checker sites allowed (realistic use) and with them excluded (tests real reasoning). Report both numbers.
+- **Start with health, finance and scam claims** (NAFDAC, CBN, fake grants), where facts are clearer, before election claims.
+- **Real messages:** collect forwarded "beware" texts, pictures and voice notes from family and friends. Remove names and phone numbers, and **keep them out of the public repo** (private data).
+- **Languages:** native speakers check whether the agent understood the claim and whether the reply makes sense. Their judgement is the answer key.
+- **Track cost:** Groq's free tier is ~200K tokens/day, so design each check to be much cheaper than a research report.
+
+### Rules
+
+- Stay politically neutral; judge only by evidence.
+- Always show sources.
+- Say "Not confirmed" when unsure.
+- Never store or publish people's private messages, names or numbers.
+
+### What makes it different
+
+| | Google | General chatbots (ChatGPT, Meta AI) | Existing fact-check bots | This project |
+|---|---|---|---|---|
+| Clear verdict, not just links | ❌ | ⚠️ | ✅ | ✅ |
+| Checks brand-new rumours live | ⚠️ (you do the work) | ⚠️ | ❌ (mostly existing fact-checks) | ✅ |
+| Prefers trusted Nigerian sources | ❌ | ❌ | ✅ | ✅ |
+| Self-checks each claim before replying | ❌ | ❌ | n/a | ✅ |
+| Says "Not confirmed" instead of guessing | n/a | ⚠️ | ✅ | ✅ |
+| Pidgin, Nigerian languages, voice notes | ❌ | ⚠️ | ⚠️ | ✅ (goal) |
+| Measured accuracy against professionals | n/a | ❌ | n/a | ✅ |
+
+Realistic positioning: not "a bot for millions of users" (hard to compete with Meta AI on reach), but **a Nigeria-specialised fact-checker with proven accuracy**. It could also help human fact-checkers by drafting research on new claims quickly.
+
+### Timeline
+
+| When | What |
+|---|---|
+| Late Oct | Finish the research agent: complete the baseline exam, fix the planner + source length, re-run and record before/after |
+| Nov | Fact-checker V1 on a new branch (`fact-checker`): English text in, verdict out. Build the answer-key test set and exam. |
+| Early Dec | V2: trusted-source filter, re-test, compare accuracy. Start pictures. |
+| Mid–late Dec | API + simple web page, README, demo |
+| 2027 | Pidgin, voice notes, Yoruba / Hausa / Igbo, WhatsApp, video |

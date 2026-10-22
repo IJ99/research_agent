@@ -70,7 +70,6 @@ def writer_node(state: ResearchState) -> dict:
     print(f"✍️  Writer: drafting report from {len(results)} sources...")
 
     numbered = "\n\n".join(f"[{i}] {r}" for i, r in enumerate(results, 1))
-
     # If the critic complained last round, show the old draft + the complaints
     feedback = ""
     if state.get("critique"):
