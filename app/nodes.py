@@ -10,7 +10,7 @@ from app.state import ResearchState
 
 load_dotenv()
 
-llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0, max_retries=6)
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
 
@@ -183,4 +183,6 @@ SOURCES:
         "critique": problems,
         "search_queries": review.follow_up_queries,
         "iteration": iteration,
+        "claims_checked": len(review.checks),
+        "claims_failed": len(failed),
     }

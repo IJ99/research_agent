@@ -10,3 +10,6 @@ class ResearchState(TypedDict):
     critique: str                                       # written by critic (later)
     iteration: int                                      # how many loops so far
     is_satisfactory: bool                               # critic's verdict
+
+    claims_checked: int                                 # from critic, last round
+    claims_failed: int                                  # from critic, last round
