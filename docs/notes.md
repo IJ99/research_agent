@@ -6,7 +6,7 @@ Repo: https://github.com/IJ99/research_agent
 
 ---
 
-## Progress (as of Oct 22, 2026)
+## Progress (as of Oct 23, 2026)
 
 | Phase | Status |
 |---|---|
@@ -14,10 +14,11 @@ Repo: https://github.com/IJ99/research_agent
 | 2. Core agent: planner → searcher → writer | ✅ Done (Oct 20) |
 | 3. Critic + self-correction loop | ✅ Done (Oct 20) |
 | 4. FastAPI endpoint + error handling | ✅ Done (Oct 21) |
-| Pushed to GitHub | ✅ Done (Oct 21) |
+| Pushed to GitHub (+ short README) | ✅ Done (Oct 21–22) |
 | Claim-by-claim critic | ✅ Done, merged (Oct 22) |
-| Evaluation suite | 🟡 Built; baseline 2 of 6 topics done (Groq daily limit) |
-| Smarter planner, longer sources, final clean-up pass | ⏳ Next, after baseline |
+| Evaluation suite + baseline | ✅ Done (Oct 22–23): **5/6 approved, avg 2.0 rounds** |
+| Smarter planner + longer sources (1,000 chars) | 🟡 On branch `planner-sources`; one test passed; full exam re-run next |
+| Final clean-up pass | ⏳ Later |
 | 5. Ollama (local GPU) | ⏳ Later |
 | README + architecture diagram | ⏳ Last |
 
@@ -85,8 +86,8 @@ START → planner → searcher → writer → critic ──(all claims pass, or 
 
 | Node | Reads | Writes | Notes |
 |---|---|---|---|
-| Planner | `topic` | `search_queries` | Structured output (`json_schema`) → exactly 3 queries. Given today's date. |
-| Searcher | `search_queries` | `search_results` | 3 Tavily results per query, trimmed to 500 chars, skips URLs seen in any round. |
+| Planner | `topic` | `search_queries` | First classifies the topic (timeless / history / current / policy / contested), then writes 3 queries with angles that fit that type. Only "current" topics get a year, and only the current year. *(On branch `planner-sources`.)* |
+| Searcher | `search_queries` | `search_results` | 3 Tavily results per query, trimmed to 1,000 chars (was 500), skips URLs seen in any round. |
 | Writer | `search_results`, `critique`, previous `report_draft` | `report_draft` | Cites numbered sources [1]. Uses ONLY sources. Attributes vendor claims. Adds Limitations. When revising, it sees its previous draft, keeps unflagged text, and prefers deleting flagged claims over rewording. |
 | Critic | `report_draft`, `search_results` | `is_satisfactory`, `critique`, `search_queries`, `iteration`, `claims_checked`, `claims_failed` | Checks up to 15 claims one by one: supported / unsupported / overstated / vendor_as_fact. **Python decides**: approved only if zero claims fail. Skips the Limitations section. |
 
@@ -157,15 +158,42 @@ Key state trick: `search_results` uses `Annotated[List[str], operator.add]`, so 
    - **The 500-character cut hurts the critic.** It failed the true Kelvin-Planck statement because the useful part of the Britannica page had been cut off. Other failures: "source provides only publication details."
    - **First drafts are padded with general knowledge** (7 failed claims in the fraud draft, e.g. "sub-second response times"). The revise loop cleans them up.
 
+8. **Complete baseline (Oct 22–23).**
+
+   | Topic | Type | Rounds | Result |
+   |---|---|---|---|
+   | AI fraud in African fintech | baseline | 2 | ✅ |
+   | Second law of thermodynamics | timeless | 3 | ❌ (2 claims still failing) |
+   | CBN cashless policy | Nigeria policy | 1 | ✅ |
+   | Malaria vaccine rollout | recent health | 2 | ✅ |
+   | Remote work productivity | conflicting | 2 | ✅ |
+   | Benin Bronzes repatriation | history | 2 | ✅ |
+
+   **Score: 5/6 approved, avg 2.0 rounds.** This is the number every change has to beat.
+   - Good critic catches: "hybrid work has the highest satisfaction" (source only gave the 51% share); "next-gen malaria vaccines promise higher efficacy" (not in source).
+   - **Planner problem confirmed on every topic:** "latest news Benin Bronzes return 2024", "2025 remote work productivity news". Forced news angles and random years.
+   - **Short sources cause false failures again:** the 1897 punitive expedition (a well-known fact) failed because the 500-char snippets didn't include it, and a whole round was spent proving it.
+   - **15-claim cap:** "15 checked, 15 passed" may hide unchecked claims if the report has more than 15. Need to check report length.
+   - Ran 4 topics in one sitting once the rolling daily quota had freed up (~23 min).
+
+9. **Smarter planner + longer sources (Oct 23, branch `planner-sources`).**
+   - Planner now classifies the topic type before writing queries, with no forced "latest news" or random years.
+   - Sources raised from 500 to **1,000** characters, not 1,500: at 500 chars a writer/critic request is already ~4–5K input tokens, and tripling the text could push a single round-3 request over the 8K tokens/minute limit on its own (it would then never succeed).
+   - **First test, thermodynamics:** classified as `timeless`; queries "definition / how entropy increases / everyday examples" (no news, no year). **Before: ❌ not approved after 3 rounds. After: ✅ approved in round 1.**
+   - One run only. Needs the full exam before merging.
+
 ---
 
 ## To-do / improvement ideas
 
 **Next**
-- [ ] Finish the baseline: run the remaining 4 exam topics in two batches (daily token limit)
-- [ ] **Smarter planner:** choose search angles to fit the topic type (timeless / policy / recent / contested); no forced "latest news"
-- [ ] **Longer source text** (500 → ~1,500 characters) so the critic stops failing true claims
-- [ ] Re-run the exam and compare scores against the baseline
+- [x] Finish the baseline (5/6 approved, avg 2.0 rounds)
+- [x] **Smarter planner:** classify topic type, angles to fit; no forced "latest news" or years *(on branch)*
+- [x] **Longer source text:** 500 → 1,000 characters *(on branch)*
+- [ ] Re-run the full exam on `planner-sources` (all 6 topics, ~2 days of quota) and compare with the baseline
+- [ ] If better: merge `planner-sources` into `main`
+- [ ] Check the 15-claim cap: do reports have more than 15 claims? If so, raise the cap or keep reports shorter
+- [ ] Add `topic_type` to the exam CSV, to check the planner's classifications
 
 **Quality**
 - [ ] **Final clean-up pass:** when stopping at max rounds, have the writer delete the claims the critic last flagged
@@ -292,11 +320,56 @@ OUTPUT LAYER: "reply the way they asked"
 
 Realistic positioning: not "a bot for millions of users" (hard to compete with Meta AI on reach), but **a Nigeria-specialised fact-checker with proven accuracy**. It could also help human fact-checkers by drafting research on new claims quickly.
 
+### What I learned from Dubawa (Oct 23)
+
+Dubawa is a West African fact-checking project run by the Nigerian non-profit **CJID**. It's non-partisan, follows the **IFCN** fact-checking principles, and runs a WhatsApp tipline. Its process is a ready-made blueprint for my agent.
+
+**Their process → my agent**
+
+| Dubawa | My agent |
+|---|---|
+| Only checks claims that **can be checked**; skips opinions and predictions | **Claim extractor** pulls out the checkable claim, or says "this is an opinion" |
+| Researches with five source rules (below) | **Searcher + critic** apply the same rules |
+| Editors "fact-check the fact-check", then a copy editor reviews | **Critic** checks the judge's verdict |
+| Every story approved by an editor before publishing | For sensitive topics (elections), consider a **human approval** step |
+| Contacts the person who made the claim | ❌ My agent can't. Note it in Limitations. |
+
+**Their five source rules (use these in the searcher and critic)**
+
+| Prefer | Over |
+|---|---|
+| Named sources | Unnamed |
+| Authoritative (official, expert) | Random |
+| Independent | Self-interested |
+| Verifiable evidence | Mere assertions |
+| Multiple sources | A single source |
+
+**Their ratings and my mapping (needed for a fair comparison)**
+
+| Dubawa rating | Meaning | Counts as (my verdict) |
+|---|---|---|
+| TRUE | Everything correct | True |
+| MOSTLY TRUE | Most parts correct (often 3+ claims) | True |
+| FALSE | Wrong, including fabricated / impersonation content | False |
+| MOSTLY FALSE | Most parts wrong | False |
+| MISLEADING (wrong / missing context) | True-sounding but out of context | Misleading |
+| MISLEADING (insufficient evidence) | Can't be verified | Not confirmed |
+
+- Record Dubawa's **exact** rating for each test claim, and read the article to tell the two kinds of Misleading apart.
+- Facebook-sourced claims sometimes use Facebook's labels instead (False, Partly False, Missing Context, True, Satire). Record which system was used.
+- WhatsApp messages often contain several claims: check each separately, then give an overall verdict (like Mostly True / Mostly False).
+
+**Choosing test claims:** use their **Fact Checks** only (not Explainers or Media Literacy). Start with the **Health, Economy and Spoofs** themes; leave Politics and Elections for later.
+
+**Reply idea from their media-literacy work:** sometimes add a one-line tip, e.g. "Government agencies never ask for your BVN on WhatsApp."
+
+**Positioning:** a potential **partner**, not a competitor. CJID's goals include building tech tools against misinformation, and its DAIDAC programme (AI in Journalism; Digital Fraud and Cybercrime) wants technologists to build AI tools with journalists. Its digital-fraud focus overlaps with my fintech fraud background. **Contact them only after V1 works**, with a demo and an accuracy number.
+
 ### Timeline
 
 | When | What |
 |---|---|
-| Late Oct | Finish the research agent: complete the baseline exam, fix the planner + source length, re-run and record before/after |
+| Late Oct | Finish the research agent: ~~baseline exam~~ ✅, ~~planner + source fixes~~ ✅ (on branch), re-run the exam and record before/after |
 | Nov | Fact-checker V1 on a new branch (`fact-checker`): English text in, verdict out. Build the answer-key test set and exam. |
 | Early Dec | V2: trusted-source filter, re-test, compare accuracy. Start pictures. |
 | Mid–late Dec | API + simple web page, README, demo |
