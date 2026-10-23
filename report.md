@@ -1,52 +1,57 @@
-**AI‑Driven Fraud Detection in African Fintech**  
-*AI is becoming a core tool for African fintechs to combat fraud through real‑time analytics, adaptive learning, and automated verification. Vendors such as Dojah and Adhere illustrate how these capabilities are packaged, while fraudsters are also using AI to create synthetic identities and deepfakes.*  
+**Second Law of Thermodynamics – Overview**
 
----  
+The second law states that the total entropy of an isolated system never decreases; it either stays constant in a reversible process or increases in any spontaneous (irreversible) change. Consequently, heat flows spontaneously from hotter to colder bodies, and no cyclic device can convert heat entirely into work.  
 
-## 1. Why AI Is Seen as Essential for African Fintechs  
-- Experts note that AI’s real‑time analytics, adaptive learning, and automation make it one of the most effective tools against financial fraud, turning it from a luxury into a necessity for African fintechs facing rising fraud threats, tighter regulatory demands, and higher customer expectations for secure digital transactions【1】.  
-- The OECD’s 2025 Africa Capital Markets Report lists AI‑based fraud detection and prevention among the prominent use cases emerging across the continent, alongside credit assessment and customer‑service automation【3】.  
+---
 
-## 2. Core AI Techniques Used in Fraud Detection  
+## 1. Historical Development  
 
-| Technique | How It Works (as described in sources) | Evidence |
-|-----------|----------------------------------------|----------|
-| **Real‑time risk scoring** | AI models ingest transaction data and instantly assign a fraud risk score, enabling immediate decisioning. | Dojah’s platform includes “AI‑powered risk scoring” as part of its five‑layer architecture【2】. |
-| **Signal aggregation & continuous monitoring** | Multiple data signals (device fingerprints, behavioral patterns, external watchlists) are combined and continuously re‑evaluated to detect anomalies. | Dojah aggregates signals across its infrastructure and provides continuous monitoring to replace fragmented tooling【2】. |
-| **Biometric and deep‑fake detection** | AI technologies are used to detect synthetic faces, deepfakes, and other AI‑generated biometric fraud. | 69 % of biometric fraud cases detected in 2025 involved AI technologies, including deepfakes and synthetic faces【4】. |
-| **Identity‑verification AI** | AI‑powered services verify government IDs and perform identity checks as part of fraud‑prevention workflows. | Adhere offers AI‑powered identity verification within its compliance and fraud‑management platform【7】. |
+- The law originated as an empirical observation and was first codified by Rudolf Clausius and William Thomson (Lord Kelvin) in the mid‑19th century [2].  
+- Early formulations, such as Carnot’s theorem, pre‑dated the modern concept of entropy and were based on the caloric theory [1].  
+- Statistical mechanics later supplied a microscopic explanation, linking the law to the probability distribution of microstates in large assemblies of atoms or molecules [1].
 
-## 3. Vendor Solutions Illustrating the Stack  
-- **Dojah** – Provides an integrated platform covering five layers: identity verification, signal aggregation, AI‑powered risk scoring, real‑time decisioning, and continuous monitoring, allowing fintechs to replace fragmented tools with a unified AI‑driven approach【2】.  
-- **Adhere (Smartcomply Group)** – Supplies AI‑powered compliance and fraud‑management services that include real‑time transaction monitoring, identity verification, sanctions screening, and regulatory reporting, serving more than 1,000 organisations across Africa【7】.  
+## 2. Formal Statements  
 
-## 4. Emerging Threats Shaping AI Use  
-- Fraudsters are increasingly leveraging AI to create convincing synthetic identities, deepfake videos, and automated phishing campaigns, making traditional rule‑based detection less effective【5】.  
-- Ecofin Agency notes that AI tools enable fraudsters to produce low‑cost digital identities and repeatedly test security systems until a vulnerability is found, with a pronounced surge in West Africa’s retail‑banking fraud attempts【4】.  
+The second law can be expressed in several equivalent ways [2][1]:  
+
+| Statement | Core Idea |
+|-----------|-----------|
+| **Clausius statement** | Heat cannot be transferred from a colder to a hotter reservoir in a cyclic process [2]. |
+| **Kelvin‑Planck statement** | No cyclic device can convert all absorbed heat into work; some heat must be rejected to a colder sink [2]. |
+| **Entropy statement** | In any reversible process the entropy of the universe is unchanged; in an irreversible process it increases [5][6]. |
+| **Hatsopoulos‑Keenan statement** (derived from the above) encompasses the Clausius, Kelvin‑Planck, and Carathéodory formulations [1]. |
+
+## 3. Entropy as the Quantitative Measure  
+
+- Entropy ( S ) quantifies the number of microscopic configurations (microstates) compatible with a macroscopic state; more microstates mean higher entropy [5].  
+- For a reversible heat transfer, the entropy change is ΔS = Q/T, where Q is the heat exchanged and T the absolute temperature [4].  
+- When heat flows from a hot object (temperature Tₕₒₜ) to a cold one (temperature T𝚌ₒₗ𝒹), the entropy gain of the cold side ( + Q/T𝚌ₒₗ𝒹 ) exceeds the entropy loss of the hot side ( – Q/Tₕₒₜ ) because Tₕₒₜ > T𝚌ₒₗ𝒹, yielding a net increase in the entropy of the universe [5][4].  
+- In a reversible process (e.g., an ideal Carnot engine) the total entropy change of the universe is zero; any real process is irreversible and therefore produces a positive entropy change [6].
+
+## 4. Implications and Everyday Examples  
+
+- **Direction of time:** The monotonic increase of entropy provides an “arrow of time,” distinguishing past from future [3][8].  
+- **Heat engines:** No engine can be 100 % efficient because some heat must be expelled to a colder reservoir, as dictated by the Kelvin‑Planck statement [2].  
+- **Refrigeration:** A refrigerator moves heat from a colder interior to a warmer exterior by consuming work; the overall entropy of the isolated system (refrigerator + environment) still increases [7].  
+- **Natural processes:** Aging, wear, and the spontaneous mixing of gases are all manifestations of entropy increase in isolated systems [7][4].  
+- **Technological limits:** Solar‑cell efficiency, automotive fuel efficiency, and HVAC design are constrained by the second law, which sets upper bounds on how much useful work can be extracted from heat [9][8].
 
 ## 5. Limitations  
-- Detailed technical descriptions rely heavily on vendor‑focused blogs (Dojah, Adhere), which may overstate capabilities.  
-- Quantitative data on AI‑driven fraud detection outcomes (e.g., reduction percentages, false‑positive rates) are scarce in the cited sources.  
-- OECD and Ecofin reports provide high‑level trends but lack granular case studies specific to individual fintechs.  
 
----  
+- The majority of the available sources are textbook‑style explanations or popular‑science descriptions; they do not provide detailed experimental data or quantitative derivations.  
+- Several sources (e.g., physics.com.sg and GeeksforGeeks) present the law in a qualitative, everyday‑life context, which, while illustrative, does not replace rigorous thermodynamic analysis.  
+- No source in the list offers a comprehensive discussion of known exceptions or debated edge cases (e.g., Maxwell’s demon), so the report cannot address those nuances.
+
+---
 
 ## Sources  
 
-1. **Can AI Reduce Fraud in Fintech? What Experts Say & Why African Fintechs Should Consider It – Advansio Blog** – https://advansio.com/blog/can-ai-reduce-fraud-in-fintech-what-experts-say-why-african-fintechs-should-consider-it  
-2. **How to Build a Fraud Detection System for Fintechs in Africa – Dojah Blog** – https://dojah.io/blog/how-to-build-fraud-detection-system-fintechs-afr  
-3. **Harnessing AI in Finance for Financial Inclusion in Africa: Africa Capital Markets Report 2025 – OECD** – https://www.oecd.org/en/publications/2025/11/africa-capital-markets-report-2025_a973e07d/full-report/harnessing-ai-in-finance-for-financial-inclusion-in-africa_a048b4fb.html  
-4. **AI‑Driven Fraud Is Surging Across Africa’s Fintech Sector, Study Finds – Ecofin Agency** – https://www.ecofinagency.com/news/0903-53601-ai-driven-fraud-is-surging-across-africa-s-fintech-sector-study-finds  
-5. **AI Fraud Patterns Every African Fintech Should Know in 2026 – Dojah Blog** – https://dojah.io/blog/ai-fraud-patterns-africa-2026  
-6. **The Innovators 2026: Africa – Global Finance Magazine** – https://gfmag.com/award/award-winners/best-innovations-2026-africa  
-7. **AI fraud: Next major threat to banks, fintechs – Report – Punch NG** – https://punchng.com/ai%E2%80%91powered-fraud-next-major-threat-to-banks-fintechs-report  
-8. **Behavior-Level Models for Fintech Fraud Detection – KITRUM** – https://kitrum.com/blog/ai-fraud-detection-fintech  
-9. **Harnessing artificial intelligence and machine learning for fraud detection and prevention in Nigeria** – https://www.sciencedirect.com/science/article/pii/S294979142500003X  
-10. **A Survey on Trustworthy AI in Fintech** – https://arxiv.org/pdf/2605.30650  
-11. **Transformative Impact of AI on the Fintech Industry – BPM** – https://www.bpm.com/insights/ai-in-fintech  
-12. **Adaptive Learning Using Artificial Intelligence in e-Learning: A Literature Review** – https://www.mdpi.com/2227-7102/13/12/1216  
-13. **Dojah Inc: Prevent Fraud and Onboard Users Faster | Y Combinator** – https://www.ycombinator.com/companies/dojah-inc  
-14. **Dojah | KYC & AML Compliance with Secure Identity Verification** – https://dojah.io  
-15. **Datadog Targets AI Driven Observability And Compliance Focused Growth In Regulated Sectors** – https://finance.yahoo.com/markets/stocks/articles/datadog-targets-ai-driven-observability-140609528.html  
-16. **ComplyAdvantage: AI-First Regtech for Modern Compliance | FinTech Magazine** – https://fintechmagazine.com/articles/complyadvantage-built-for-modern-compliance  
-17. **Why AI & Automation Are Critical for Compliance Success in 2025 | Blog** – https://www.metricstream.com/blog/why-ai-automation-are-critical-for-compliance-success.html
+1. **Second law of thermodynamics – Wikipedia** – https://en.wikipedia.org/wiki/Second_law_of_thermodynamics  
+2. **Second law of thermodynamics | Britannica** – https://www.britannica.com/science/second-law-of-thermodynamics  
+3. **What is the Second Law of Thermodynamics? (YouTube)** – https://www.youtube.com/watch?v=mGDJO2M7RBg  
+4. **12.3 Second Law of Thermodynamics: Entropy | TEKS Guide** – https://teksguide.org/resource/123-second-law-thermodynamics-entropy  
+5. **19.2: Entropy and the Second Law of Thermodynamics - Chemistry LibreTexts** – https://chem.libretexts.org/Bookshelves/General_Chemistry/Map%3A_Chemistry_-_The_Central_Science_(Brown_et_al.)/19%3A_Chemical_Thermodynamics/19.02%3A_Entropy_and_the_Second_Law_of_Thermodynamics  
+6. **Entropy and the second law** – http://physics.bu.edu/~duffy/py105/Secondlaw.html  
+7. **Exploring The Various Laws Of Thermodynamics In Daily Life** – https://www.physics.com.sg/exploring-the-various-laws-of-thermodynamics-in-daily-life.htm  
+8. **The second law of thermodynamics underlies nearly everything. But is it inviolable?** – https://www.sciencenews.org/article/disorder-thermodynamics-second-law  
+9. **Applications of Second Law of Thermodynamics - GeeksforGeeks** – https://www.geeksforgeeks.org/physics/applications-of-second-law-of-thermodynamics

@@ -15,7 +15,11 @@ tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
 
 # The exact shape we want the LLM to return
+# The exact shape we want the LLM to return
 class SearchPlan(BaseModel):
+    topic_type: Literal["timeless", "history", "current", "policy", "contested"] = Field(
+        description="What kind of topic this is"
+    )
     queries: List[str] = Field(description="3 focused, distinct web search queries")
 
 
@@ -23,17 +27,35 @@ def planner_node(state: ResearchState) -> dict:
     topic = state["topic"]
     print(f"🧠 Planner: breaking down '{topic}'...")
 
-    planner_llm = llm.with_structured_output(SearchPlan, method="json_schema")
+    planner_llm = llm.with_structured_output(SearchPlan, method="json_schema").with_retry(stop_after_attempt=2)
 
     prompt = f"""You are a research planner. Today is {date.today()}.
-Break this topic into exactly 3 web search queries that together cover it well.
-Each query should target a different angle (e.g. facts/background, recent news, expert analysis).
-Keep each query short, like something a person would type into a search engine.
+
+STEP 1: Classify the topic as one of:
+- "timeless": science, concepts, how things work (e.g. a law of physics)
+- "history": past events (e.g. a war, a past repatriation)
+- "current": an ongoing situation whose status changes (e.g. a vaccine rollout)
+- "policy": a government or institutional policy and its effects
+- "contested": a question where studies or experts disagree
+
+STEP 2: Write exactly 3 search queries whose angles fit that type:
+- timeless:  definition / how it works / examples or evidence
+- history:   background / timeline of key events / outcome and aftermath
+- current:   latest status / official figures / challenges
+- policy:    what the policy says / how it was implemented / measured impact
+- contested: evidence for / evidence against / reviews or meta-analyses
+
+Rules:
+- The 3 queries must cover DIFFERENT angles, not reworded versions of the same search.
+- Do NOT add words like "latest news" or "expert analysis" unless they genuinely fit.
+- Only include a year if the topic type is "current", and then use the current year ({date.today().year}).
+- Keep each query short, like something a person would type into a search engine.
 
 Topic: {topic}"""
 
     plan = planner_llm.invoke(prompt)
 
+    print(f"   Topic type: {plan.topic_type}")
     for i, q in enumerate(plan.queries, 1):
         print(f"   {i}. {q}")
 
@@ -58,7 +80,7 @@ def searcher_node(state: ResearchState) -> dict:
             if r["url"] in seen:
                 continue                     
             seen.add(r["url"])
-            content = r["content"][:500]
+            content = r["content"][:1000]
             results.append(f"TITLE: {r['title']}\nURL: {r['url']}\nCONTENT: {content}")
 
     print(f"   Collected {len(results)} new results.")

@@ -1,7 +1,7 @@
 from app.graph import agent
 
 initial_state = {
-    "topic": "How AI is used to detect fraud in African fintech",
+    "topic": "Explain the second law of thermodynamics",
     "search_queries": [],
     "search_results": [],
     "report_draft": "",
