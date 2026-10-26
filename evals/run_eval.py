@@ -8,12 +8,12 @@ from app.graph import agent
 # The fixed "exam paper": varied topic types
 # Lines starting with # are switched off (already done in the first run)
 TOPICS = [
-    # ("baseline", "How AI is used to detect fraud in African fintech"),
-    # ("timeless", "Explain the second law of thermodynamics"),
+    #("baseline", "How AI is used to detect fraud in African fintech"),
+    #("timeless", "Explain the second law of thermodynamics"),
     ("nigeria_policy", "Impact of the CBN cashless policy on small businesses in Nigeria"),
-    ("recent_health", "Current state of malaria vaccine rollout in Africa"),
-    ("conflicting", "Effects of remote work on employee productivity"),
-    ("history", "History of the Benin Bronzes repatriation"),
+    #("recent_health", "Current state of malaria vaccine rollout in Africa"),
+    #("conflicting", "Effects of remote work on employee productivity"),
+    #("history", "History of the Benin Bronzes repatriation"),
 ]
 
 RUNS_PER_TOPIC = 1      # increase to 2-3 later for more reliable numbers

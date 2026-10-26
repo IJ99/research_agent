@@ -1,0 +1,4 @@
+category,topic,run,status,approved,rounds,sources,claims_checked,claims_failed,report_words,seconds
+nigeria_policy,Impact of the CBN cashless policy on small businesses in Nigeria,1,ok,False,3,11,13,3,713,178.9
+recent_health,Current state of malaria vaccine rollout in Africa,1,ok,True,1,4,15,0,572,52.0
+history,History of the Benin Bronzes repatriation,1,ok,True,1,8,13,0,773,55.0

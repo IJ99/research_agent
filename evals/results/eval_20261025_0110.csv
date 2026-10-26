@@ -1,0 +1,7 @@
+category,topic,run,status,approved,rounds,sources,claims_checked,claims_failed,report_words,seconds
+baseline,How AI is used to detect fraud in African fintech,1,ok,True,3,17,15,0,606,249.4
+timeless,Explain the second law of thermodynamics,1,ok,True,2,13,12,0,610,168.8
+nigeria_policy,Impact of the CBN cashless policy on small businesses in Nigeria,1,error: ConnectionError,,,,,,,334.4
+recent_health,Current state of malaria vaccine rollout in Africa,1,error: APIStatusError,,,,,,,205.6
+conflicting,Effects of remote work on employee productivity,1,ok,True,1,7,11,0,714,25.4
+history,History of the Benin Bronzes repatriation,1,ok,True,1,9,3,0,962,70.5

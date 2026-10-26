@@ -1,4 +1,6 @@
 import os
+import time
+import re
 from typing import List, Literal
 from datetime import date
 from pydantic import BaseModel, Field
@@ -22,6 +24,16 @@ class SearchPlan(BaseModel):
     )
     queries: List[str] = Field(description="3 focused, distinct web search queries")
 
+SOURCE_BUDGET_CHARS = 8000   # total characters of source text per request
+
+
+def format_sources(results, numbers=None):
+    """Number the sources and share a fixed character budget between them.
+    If `numbers` is given, include only those sources (keeping their original numbers)."""
+    if numbers is None:
+        numbers = list(range(1, len(results) + 1))
+    per_source = max(300, min(1000, SOURCE_BUDGET_CHARS // max(len(numbers), 1)))
+    return "\n\n".join(f"[{n}] {results[n - 1][:per_source]}" for n in numbers)
 
 def planner_node(state: ResearchState) -> dict:
     topic = state["topic"]
@@ -48,7 +60,7 @@ STEP 2: Write exactly 3 search queries whose angles fit that type:
 Rules:
 - The 3 queries must cover DIFFERENT angles, not reworded versions of the same search.
 - Do NOT add words like "latest news" or "expert analysis" unless they genuinely fit.
-- Only include a year if the topic type is "current", and then use the current year ({date.today().year}).
+- Only include a year if the topic type is "current", and then use the current year ({date.today().year}) in at most ONE of the three queries.
 - Keep each query short, like something a person would type into a search engine.
 
 Topic: {topic}"""
@@ -60,6 +72,18 @@ Topic: {topic}"""
         print(f"   {i}. {q}")
 
     return {"search_queries": plan.queries}
+
+
+def search_with_retry(query, attempts=3):
+    """Try a Tavily search up to 3 times; if it still fails, skip this query."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return tavily.search(query, max_results=3)
+        except Exception as e:
+            print(f"   ⚠️ Search failed (attempt {attempt}/{attempts}): {type(e).__name__}")
+            if attempt == attempts:
+                return {"results": []}   # give up on this query, but keep the run going
+            time.sleep(3)
 
 
 def searcher_node(state: ResearchState) -> dict:
@@ -74,7 +98,7 @@ def searcher_node(state: ResearchState) -> dict:
     results = []
     for q in queries:
         print(f"   → {q}")
-        response = tavily.search(q, max_results=3)
+        response = search_with_retry(q)
 
         for r in response["results"]:
             if r["url"] in seen:
@@ -91,7 +115,7 @@ def writer_node(state: ResearchState) -> dict:
     results = state["search_results"]
     print(f"✍️  Writer: drafting report from {len(results)} sources...")
 
-    numbered = "\n\n".join(f"[{i}] {r}" for i, r in enumerate(results, 1))
+    numbered = format_sources(results)
     # If the critic complained last round, show the old draft + the complaints
     feedback = ""
     if state.get("critique"):
@@ -122,6 +146,8 @@ Rules:
 - Treat vendor/marketing claims as claims, not facts (e.g. "Sumsub says...").
 - If the evidence is mostly from vendors or is thin, include a short "Limitations" section saying so.
 - End with a "Sources" section listing each number with its title and URL.
+- Statements about the quality or gaps of the evidence (e.g. "no firm-level data exists") belong ONLY in the Limitations section, never in the main sections.
+- Never apply a general finding to a specific group (e.g. "small businesses", "Africa", "women") unless the source itself mentions that group. If the sources don't cover the group the topic asks about, say so in the Limitations section instead.
 {feedback}
 Topic: {state['topic']}
 
@@ -143,7 +169,7 @@ class ClaimCheck(BaseModel):
 
 # The critic's full review
 class ClaimReview(BaseModel):
-    checks: List[ClaimCheck] = Field(description="Up to 15 of the most important factual claims, each checked")
+    checks: List[ClaimCheck] = Field(description="Between 10 and 15 of the most important factual claims, each checked")
     follow_up_queries: List[str] = Field(default_factory=list, description="Up to 2 search queries to fix failed claims. Empty if all passed.")
 
 
@@ -154,11 +180,25 @@ def critic_node(state: ResearchState) -> dict:
     iteration = state.get("iteration", 0) + 1
     print(f"🧐 Critic: checking claims (round {iteration})...")
 
-    numbered = "\n\n".join(f"[{i}] {r}" for i, r in enumerate(state["search_results"], 1))
+    all_results = state["search_results"]
+    report = state["report_draft"]
+
+    # Only look at the main text, not the Sources list at the end
+    body = report[: report.rfind("Sources")] if "Sources" in report else report
+
+    # Find every citation number, in [3] or 【3】 style
+    cited = sorted({int(n) for n in re.findall(r"[\[【](\d+)[\]】]", body)})
+    cited = [n for n in cited if 1 <= n <= len(all_results)]
+    if not cited:                      # no citations found → fall back to all sources
+        cited = list(range(1, len(all_results) + 1))
+
+    print(f"   Sending the critic {len(cited)} cited sources (of {len(all_results)}).")
+    numbered = format_sources(all_results, cited)
 
     prompt = f"""You are a meticulous fact-checker. Check the report CLAIM BY CLAIM.
 
-For up to 15 of the most important factual claims in the report:
+Check between 10 and 15 of the most important factual claims in the report
+(or every claim, if the report has fewer than 10):
 1. Write the claim (max 20 words) and the source numbers it cites.
 2. Read ONLY that cited source's text below. It is the only evidence that counts.
 3. Give exactly one verdict:
@@ -191,6 +231,9 @@ SOURCES:
     for c in failed:
         print(f"   ❌ [{c.verdict}] {c.claim}  →  {c.reason}")
 
+    if len(review.checks) < 8:
+        print("   ⚠️ Critic checked very few claims — treat this approval with caution.")
+    
     # Turn the failures into clear instructions for the writer
     problems = "\n".join(
         f"- [{c.verdict}] \"{c.claim}\" (cited {c.cited}): {c.reason}" for c in failed
@@ -207,3 +250,21 @@ SOURCES:
         "claims_checked": len(review.checks),
         "claims_failed": len(failed),
     }
+
+def cleanup_node(state: ResearchState) -> dict:
+    """After the last round: delete the claims the critic still rejected. Nothing else."""
+    print("🧹 Clean-up: removing claims the critic still flagged...")
+
+    prompt = f"""Below is a research report and a list of claims a fact-checker rejected.
+Delete each rejected claim (or the part of the sentence that makes it).
+Fix any sentence that no longer reads well. Change NOTHING else and add NO new content.
+
+REJECTED CLAIMS:
+{state['critique']}
+
+REPORT:
+{state['report_draft']}"""
+
+    response = llm.invoke(prompt)
+    print("   Clean-up complete.")
+    return {"report_draft": response.content}
